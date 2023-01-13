@@ -1,0 +1,31 @@
+generator client {
+    provider        = "prisma-client-js"
+    previewFeatures = ["extendedWhereUnique"]
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model blocks {
+    seqno Int @id @unique
+}
+
+model pools {
+    id      Int   @id @default(autoincrement())
+    account Bytes @unique
+}
+
+model users {
+    id      Int   @id @default(autoincrement())
+    account Bytes @unique
+}
+
+model earns {
+    id          Int     @id @default(autoincrement())
+    userId      Int     @map("user_id")
+    poolId      Int     @map("pool_id")
+    deposits    Decimal @default(0) @db.Decimal(37, 0) // len(str(2 ** 120 - 1))
+    withdrawals Decimal @default(0) @db.Decimal(37, 0) // len(str(2 ** 120 - 1))
+}

@@ -1,0 +1,24 @@
+# main
+dist
+node_modules
+pools.json
+
+# prisma
+prisma/migrations
+
+# vscode
+.vscode/*
+!.vscode/settings.json
+.history/
+*.vsix
+
+# env
+.env
+
+# Mac OS General
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# other
+*.log

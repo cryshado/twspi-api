@@ -1,0 +1,10 @@
+{
+    "apps": [
+        {
+            "name": "twspi-api-pubapi",
+            "script": "./dist/cmd/pubapi/index.js",
+            "instances" : "max",
+            "exec_mode" : "cluster"
+        }
+    ]
+}

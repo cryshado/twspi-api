@@ -1,0 +1,26 @@
+# ======================================
+FROM node:16.16.0 as base
+
+COPY package.json ./
+COPY ecosystem.json ./
+COPY yarn.lock ./
+
+RUN yarn install
+
+COPY src ./src
+COPY prisma ./prisma
+COPY Makefile ./Makefile
+COPY tsconfig.json ./tsconfig.json
+
+RUN make npx_prisma_generate
+RUN make tsc_build
+# ======================================
+FROM node:16.16.0
+
+WORKDIR /app
+
+COPY --from=base ./ecosystem.json ./ecosystem.json
+COPY --from=base ./node_modules ./node_modules
+COPY --from=base ./dist ./dist
+
+CMD [ "npx", "pm2-runtime", "start", "ecosystem.json" ]

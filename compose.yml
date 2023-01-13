@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  pubapi:
+    restart: on-failure
+    container_name: twspi-api-pubapi
+    build:
+      dockerfile: ./.docker/Dockerfile.pubapi
+      context: .
+    env_file: [".env"]
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLM}
+    ports:
+      - "8080:8080"
+    networks: [ "net_1" ]
+
+  scansr:
+    restart: on-failure
+    container_name: twspi-api-scansr
+    build:
+      dockerfile: ./.docker/Dockerfile.scansr
+      context: .
+    env_file: [".env"]
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLM}
+    networks: [ "net_1" ]
+
+  postgres:
+    image: postgres:14
+    container_name: postgres-twspi-api
+    hostname: postgres
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - database_postgres:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    networks: [ "net_1" ]
+
+volumes:
+  database_postgres:
+
+networks:
+  net_1:
+    driver: bridge

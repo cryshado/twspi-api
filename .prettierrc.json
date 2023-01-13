@@ -1,0 +1,18 @@
+{
+    "overrides": [
+        {
+            "files": ["*.json"],
+            "options": {
+                "printWidth": 100,
+                "tabWidth": 4,
+                "useTabs": false,
+                "singleQuote": false,
+                "bracketSpacing": true,
+                "jsxBracketSameLine": false,
+                "explicitTypes": "always",
+                "arrowParens": "avoid",
+                "proseWrap": "always"
+            }
+        }
+    ]
+}
