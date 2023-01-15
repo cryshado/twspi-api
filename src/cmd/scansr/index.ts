@@ -1,5 +1,6 @@
 import { Address, fromNano } from 'ton'
 import { Prisma } from '@prisma/client'
+import { Decimal } from '@prisma/client/runtime'
 import { GetBlockResult, Maybe, Pool, TXExt } from '../../types'
 
 import {
@@ -19,6 +20,30 @@ interface IProcessOptions {
     pools: ExtPool[],
     seqno: number,
     txsps: GetBlockResult
+}
+
+interface IUpsert {
+    field: 'deposits' | 'withdrawals',
+    value: Decimal,
+    userId: number,
+    poolId: number,
+}
+
+async function updateOrInsert (dbtx: Prisma.TransactionClient, opt: IUpsert) {
+    const field = Prisma.raw(opt.field)
+    return dbtx.$executeRaw`
+        WITH _ AS (
+            UPDATE earns SET ${field} = earns.${field} + ${opt.value}
+            WHERE user_id = ${opt.userId} AND pool_id = ${opt.poolId}
+            returning *
+        )
+        INSERT INTO earns (user_id, pool_id, ${field})
+        SELECT ${opt.userId}, ${opt.poolId}, ${opt.value}
+        WHERE NOT EXISTS (
+            SELECT 1 FROM earns
+            WHERE user_id = ${opt.userId} AND pool_id = ${opt.poolId}
+        );
+    `
 }
 
 async function process (options: IProcessOptions): Promise<void> {
@@ -70,14 +95,11 @@ async function process (options: IProcessOptions): Promise<void> {
             logger.info(`#${seqno} deposit for ${fromNano(deposit)} ton`)
 
             const user = await createUser(dbtx, data.from.hash)
-            await dbtx.earns.upsert({
-                where: { userId: user.id, poolId: data.pool.id, id: -1 },
-                create: {
-                    userId: user.id,
-                    poolId: data.pool.id,
-                    deposits: bndec(deposit)
-                },
-                update: { deposits: { increment: bndec(deposit) } }
+            await updateOrInsert(dbtx, {
+                field: 'deposits',
+                value: bndec(deposit),
+                userId: user.id,
+                poolId: data.pool.id
             })
         }
 
@@ -85,14 +107,11 @@ async function process (options: IProcessOptions): Promise<void> {
             logger.info(`#${seqno} withdraw for ${fromNano(withdraw)} ton`)
 
             const user = await createUser(dbtx, data.from.hash)
-            await dbtx.earns.upsert({
-                where: { userId: user.id, poolId: data.pool.id, id: -1 },
-                create: {
-                    userId: user.id,
-                    poolId: data.pool.id,
-                    withdrawals: bndec(withdraw)
-                },
-                update: { withdrawals: { increment: bndec(withdraw) } }
+            await updateOrInsert(dbtx, {
+                field: 'withdrawals',
+                value: bndec(withdraw),
+                userId: user.id,
+                poolId: data.pool.id
             })
         }
     }
@@ -163,7 +182,7 @@ async function main () {
         try {
             await entry()
         } catch (error) {
-            console.error(error)
+            logger.error(error)
             await sleep(1000)
         }
     }
