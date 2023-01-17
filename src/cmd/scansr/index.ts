@@ -116,7 +116,7 @@ async function process (options: IProcessOptions): Promise<void> {
         }
     }
 
-    await prisma.blocks.create({ data: { seqno } })
+    await dbtx.blocks.create({ data: { seqno } })
 }
 
 async function entry () {
